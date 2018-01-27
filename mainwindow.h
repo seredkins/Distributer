@@ -39,7 +39,11 @@ private:
     QImage buffer_image, buffer_image2;
     BoxFilter box;
 
-    int y_max;
+    int totalXCoordinates = 0, totalYCoordinates = 0, square = 0,
+        centralMoment20 = 0, centralMoment02 = 0, centralMoment11 = 0,
+        xCentralMass = 0, yCentralMass = 0;
+    double elongation = 0;
+
     int shift, sigma, alpha;
 
     // Makes image black and white in a right way
@@ -59,13 +63,8 @@ private:
     void extractResult();
 
     // Initialisers of values for elongation
-    void initElongation(const int&, const int&,
-                        const int&, const int&,
-                        int&, int&, int&, double&);
-
-    void initCenterOfMass(const int&, const
-                          int&, int&, int&,
-                          int&, int&, int&);
+    void initElongation(const int&, const int&);
+    void initCenterOfMass(const int&, const int&);
 
     // Needes for binarisation
     int findBrightnessBorder();
@@ -75,10 +74,11 @@ private:
     bool whitePixFound(const int&, const int&);
     bool blackPixFound(const int&, const int&);
 
-    void colorizeObject(const int&, const int&,
-                        const int&, const int&);
+    void colorizeObject(const int&, const int&);
 
     void medialFilter();
+
+
 
 private slots:
     void openImage();

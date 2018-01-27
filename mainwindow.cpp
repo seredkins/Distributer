@@ -136,6 +136,7 @@ void MainWindow::opening() {
 // Needes for binarisation
 int MainWindow::getMaxOfBrightness() {
     int max = 0;
+    int maxBrightnessValue;
     std::map<int, int>histogram;
     for (int it = 0; it < 256; ++it)
         histogram.insert( std::pair<int, int>(it, 0));
@@ -147,18 +148,18 @@ int MainWindow::getMaxOfBrightness() {
     for (int it = 0; it < 256; ++it)
         if (histogram[it] > max) {
             max = histogram[it];
-            y_max = it;
+            maxBrightnessValue = it;
         }
-    return y_max;
+    return maxBrightnessValue;
 }
 
 int MainWindow::findBrightnessBorder() {
     if (!image) return 0;
-    int maxOfBrightness = getMaxOfBrightness();
+    int maxBrightnessValue = getMaxOfBrightness();
     int part = image->width()*image->height()*0.535;
     int pixels_count = 0;
 
-    for (int it = maxOfBrightness; it < 256; ++it){
+    for (int it = maxBrightnessValue; it < 256; ++it){
         for (int i = 0; i < image->width(); ++i)
             for (int j = 0; j < image->height(); ++j) {
                 if (qGray(image->pixel(i, j)) == it)
@@ -257,65 +258,43 @@ void MainWindow::extractResult() {
 }
 
 // Functions for erosin and delation functions
-bool MainWindow::whitePixFound(const int& row, const int& column) {
+bool MainWindow::whitePixFound(const int& pix_row, const int& pix_column) {
 
-    for(int i = row - shift; i <= row + shift; ++i)
-        for(int j = column - shift; j <= column + shift; ++j)
+    for(int i = pix_row - shift; i <= pix_row + shift; ++i)
+        for(int j = pix_column - shift; j <= pix_column + shift; ++j)
             if (buffer_image2.pixel(i, j) == qRgb(255, 255, 255)) return true;
 
     return false;
 }
 
-bool MainWindow::blackPixFound(const int& row, const int& column) {
-    for(int i = row - shift; i <= row + shift; ++i)
-        for(int j = column - shift; j <= column + shift; ++j)
+bool MainWindow::blackPixFound(const int& pix_row, const int& pix_column) {
+    for(int i = pix_row - shift; i <= pix_row + shift; ++i)
+        for(int j = pix_column - shift; j <= pix_column + shift; ++j)
             if (buffer_image2.pixel(i, j) == qRgb(0, 0, 0)) return true;
 
     return false;
 }
 
 
-void MainWindow::initElongation(const int& row, const int& column,
-                                const int& xCentralMass, const int& yCentralMass,
-                                int& cantralMoment20, int& cantralMoment02, int& cantralMoment11,
-                                double& elongation) {
-
+void MainWindow::initElongation(const int& row, const int& column) {
     if (image->pixel(row, column) != qRgb(255, 255, 254)) return;
 
-    cantralMoment20 += pow((column - xCentralMass), 2);
-    cantralMoment02 += pow((row - yCentralMass), 2);
-    cantralMoment11 += (column - xCentralMass)*(row - yCentralMass);
+    centralMoment20 += pow((column - xCentralMass), 2);
+    centralMoment02 += pow((row - yCentralMass), 2);
+    centralMoment11 += (column - xCentralMass)*(row - yCentralMass);
 
-    elongation = (cantralMoment20 + cantralMoment02 - sqrt(pow((cantralMoment20 - cantralMoment02), 2) + 4*cantralMoment11*cantralMoment11)) /
-                 (cantralMoment20 + cantralMoment02 + sqrt(pow((cantralMoment20 - cantralMoment02), 2) + 4*cantralMoment11*cantralMoment11));
+    elongation = (centralMoment20 + centralMoment02 - sqrt(pow((centralMoment20 - centralMoment02), 2) + 4*centralMoment11*centralMoment11)) /
+                 (centralMoment20 + centralMoment02 + sqrt(pow((centralMoment20 - centralMoment02), 2) + 4*centralMoment11*centralMoment11));
 
 
     image->setPixel(row, column, qRgb(255, 255, 253));
-    if (row + 1 != image->width()) initElongation(row + 1, column,
-                                                  xCentralMass, yCentralMass,
-                                                  cantralMoment20, cantralMoment02, cantralMoment11,
-                                                  elongation);
-
-    if (column + 1 != image->height()) initElongation(row, column + 1,
-                                                      xCentralMass, yCentralMass,
-                                                      cantralMoment20, cantralMoment02, cantralMoment11,
-                                                      elongation);
-
-    if (row - 1 != -1) initElongation(row - 1, column,
-                                      xCentralMass, yCentralMass,
-                                      cantralMoment20, cantralMoment02, cantralMoment11,
-                                      elongation);
-
-    if (column - 1 != -1) initElongation(row, column - 1,
-                                         xCentralMass, yCentralMass,
-                                         cantralMoment20, cantralMoment02, cantralMoment11,
-                                         elongation);
+    if (row + 1 != image->width()) initElongation(row + 1, column);
+    if (column + 1 != image->height()) initElongation(row, column + 1);
+    if (row - 1 != -1) initElongation(row - 1, column);
+    if (column - 1 != -1) initElongation(row, column - 1);
 }
 
-void MainWindow::initCenterOfMass(const int& row, const int& column, int& square,
-                                  int& totalXCoordinates, int& totalYCoordinates,
-                                  int& xCentralMass, int& yCentralMass) {
-
+void MainWindow::initCenterOfMass(const int& row, const int& column) {
     if (image->pixel(row, column) != qRgb(255, 255, 255)) return;
     square++;
 
@@ -326,26 +305,13 @@ void MainWindow::initCenterOfMass(const int& row, const int& column, int& square
     yCentralMass = totalYCoordinates / square;
 
     image->setPixel(row, column, qRgb(255, 255, 254));
-    if (row + 1 != image->width()) initCenterOfMass(row + 1, column,
-                                                    square, totalXCoordinates, totalYCoordinates,
-                                                    xCentralMass, yCentralMass);
-
-    if (column + 1 != image->height()) initCenterOfMass(row, column + 1,
-                                                        square, totalXCoordinates, totalYCoordinates,
-                                                        xCentralMass, yCentralMass);
-
-    if (row - 1 != -1) initCenterOfMass(row - 1, column,
-                                        square, totalXCoordinates, totalYCoordinates,
-                                        xCentralMass, yCentralMass);
-
-    if (column - 1 != -1) initCenterOfMass(row, column - 1,
-                                           square, totalXCoordinates, totalYCoordinates,
-                                           xCentralMass, yCentralMass);
+    if (row + 1 != image->width()) initCenterOfMass(row + 1, column);
+    if (column + 1 != image->height()) initCenterOfMass(row, column + 1);
+    if (row - 1 != -1) initCenterOfMass(row - 1, column);
+    if (column - 1 != -1) initCenterOfMass(row, column - 1);
 }
 
-void MainWindow::colorizeObject(const int& row, const int& column,
-                                const int& elongation, const int& square) {
-
+void MainWindow::colorizeObject(const int& row, const int& column) {
         if (image->pixel(row, column) != qRgb(255, 255, 253)) return;
 
         if(elongation < 0.7 && square > 1000)  // Means it is spoon
@@ -356,10 +322,10 @@ void MainWindow::colorizeObject(const int& row, const int& column,
             image->setPixel(row, column, qRgb(0, 0, 0));
 
 
-        if (row + 1 != image->width()) colorizeObject(row + 1, column, elongation, square);
-        if (column + 1 != image->height()) colorizeObject(row, column + 1, elongation, square);
-        if (row - 1 != -1) colorizeObject(row - 1, column, elongation, square);
-        if (column - 1 != -1) colorizeObject(row, column - 1, elongation, square);
+        if (row + 1 != image->width()) colorizeObject(row + 1, column);
+        if (column + 1 != image->height()) colorizeObject(row, column + 1);
+        if (row - 1 != -1) colorizeObject(row - 1, column);
+        if (column - 1 != -1) colorizeObject(row, column - 1);
 }
 
 
@@ -380,20 +346,17 @@ void MainWindow::detect() {
     for (int i = 0; i < image->width(); ++i)
         for (int j = 0; j < image->height(); ++j) {
 
-            int totalXCoordinates = 0, totalYCoordinates = 0, square = 0,
-                cantralMoment20 = 0, cantralMoment02 = 0, cantralMoment11 = 0,
-                xCentralMass = 0, yCentralMass = 0;
-            double elongation = 0;
+            // Need to zero all variables because every new pix is new object
+            totalXCoordinates = 0; totalYCoordinates = 0;
+            elongation = 0; square = 0;
+            centralMoment20 = 0; centralMoment02 = 0; centralMoment11 = 0;
 
             // Elongation is main criterion
             // To calculat it center of mass needed
-            initCenterOfMass(i, j, square, totalXCoordinates, totalYCoordinates,
-                             xCentralMass, yCentralMass);
+            initCenterOfMass(i, j);
+            initElongation(i, j);
 
-            initElongation(i, j, xCentralMass, yCentralMass,
-                           cantralMoment20, cantralMoment02, cantralMoment11, elongation);
-
-            colorizeObject(i, j, elongation, square);
+            colorizeObject(i, j);
     }
 
     updateImage();
