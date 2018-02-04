@@ -33,8 +33,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(buttons[0], SIGNAL(clicked(bool)), this, SLOT(detect()));
     connect(buttons[1], SIGNAL(clicked(bool)), this, SLOT(gaussianBlur()));
 
-    sigma = 1;
     alpha = 1;
+    sigma = 1;
+
+    buttons[1]->setEnabled(false);
+    buttons[0]->setEnabled(false);
 
     buttons[0]->setText("Detect!");
     buttons[1]->setText("Gaussian Blur");
@@ -68,6 +71,9 @@ void MainWindow::openImage() {
     if (newImage.isNull()) image = nullptr;
     image = new QImage(newImage);
     updateImage();
+
+    buttons[1]->setEnabled(true);
+    buttons[0]->setEnabled(true);
 }
 
 void MainWindow::updateImage() {
