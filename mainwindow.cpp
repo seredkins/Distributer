@@ -3,12 +3,11 @@
 #include <QPixmap>
 #include <QImageReader>
 #include <QFileDialog>
-#include <map>
 #include <math.h>
 
 MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent)
-{
+    QMainWindow(parent) {
+
     draw_widget = new QLabel("", this);
 
     hlayout = new QHBoxLayout();
@@ -30,23 +29,17 @@ MainWindow::MainWindow(QWidget *parent) :
     setFixedSize(800, 600);
 
     connect(open_button, SIGNAL(clicked(bool)), this, SLOT(openImage()));
-    connect(buttons[0], SIGNAL(clicked(bool)), this, SLOT(detect()));
+    connect(buttons[0], SIGNAL(clicked(bool)), this, SLOT(distribute()));
     connect(buttons[1], SIGNAL(clicked(bool)), this, SLOT(gaussianBlur()));
-
-    alpha = 1;
-    sigma = 1;
 
     buttons[1]->setEnabled(false);
     buttons[0]->setEnabled(false);
 
-    buttons[0]->setText("Detect!");
+    buttons[0]->setText("Distribute");
     buttons[1]->setText("Gaussian Blur");
-
-    srand(time(0));
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     delete open_button;
     delete draw_widget;
     for (int i = 0; i < BUTTONS_COUNT; ++i)
@@ -102,25 +95,26 @@ void MainWindow::dilation() {
     if (!image) return;
     box.set_size(3);
     initBuffImage();
-    buffer_image2 = buffer_image;
+    QImage buffer_image_copy = buffer_image;
 
     for (int i = shift; i < buffer_image.width() - shift; ++i)
         for (int j = shift; j < buffer_image.height() - shift; ++j)
-            if(whitePixFound(i, j))
+            if(whitePixFound(buffer_image_copy, i, j))
                 buffer_image.setPixel(i, j, qRgb(255, 255, 255));
 
     extractResult();
 }
 
-void MainWindow::erosion() {
+void MainWindow::erosion()
+{
     if (!image) return;
     box.set_size(3);
     initBuffImage();
-    buffer_image2 = buffer_image;
+    QImage buffer_image_copy = buffer_image;
 
     for (int i = shift; i < buffer_image.width() - shift; ++i)
         for (int j = shift; j < buffer_image.height() - shift; ++j)
-            if(blackPixFound(i, j))
+            if(blackPixFound(buffer_image_copy, i, j))
                 buffer_image.setPixel(i, j, qRgb(0, 0, 0));
 
     extractResult();
@@ -207,7 +201,7 @@ void MainWindow::medialFilter() {
     updateImage();
 }
 
-void MainWindow::gaussianBlur() {
+void MainWindow::gaussianBlur(const int& sigma = 1) {
     if (!image) return;
     box.set_size(5);
     initBuffImage();
@@ -264,19 +258,19 @@ void MainWindow::extractResult() {
 }
 
 // Functions for erosin and delation functions
-bool MainWindow::whitePixFound(const int& pix_row, const int& pix_column) {
+bool MainWindow::whitePixFound(const QImage& buffer_image_copy, const int& pix_row, const int& pix_column) {
 
     for(int i = pix_row - shift; i <= pix_row + shift; ++i)
         for(int j = pix_column - shift; j <= pix_column + shift; ++j)
-            if (buffer_image2.pixel(i, j) == qRgb(255, 255, 255)) return true;
+            if (buffer_image_copy.pixel(i, j) == qRgb(255, 255, 255)) return true;
 
     return false;
 }
 
-bool MainWindow::blackPixFound(const int& pix_row, const int& pix_column) {
+bool MainWindow::blackPixFound(const QImage& buffer_image_copy, const int& pix_row, const int& pix_column) {
     for(int i = pix_row - shift; i <= pix_row + shift; ++i)
         for(int j = pix_column - shift; j <= pix_column + shift; ++j)
-            if (buffer_image2.pixel(i, j) == qRgb(0, 0, 0)) return true;
+            if (buffer_image_copy.pixel(i, j) == qRgb(0, 0, 0)) return true;
 
     return false;
 }
@@ -335,7 +329,7 @@ void MainWindow::colorizeObject(const int& row, const int& column) {
 }
 
 
-void MainWindow::detect() {
+void MainWindow::distribute() {
     if (!image) return;
 
     // Need to make image black and white first

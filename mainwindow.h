@@ -36,7 +36,7 @@ private:
     QPushButton *open_button;
     QPushButton *buttons[BUTTONS_COUNT];
     QImage* image;
-    QImage buffer_image, buffer_image2;
+    QImage buffer_image;
     BoxFilter box;
 
     int totalXCoordinates = 0, totalYCoordinates = 0, square = 0,
@@ -44,7 +44,7 @@ private:
         xCentralMass = 0, yCentralMass = 0;
     double elongation = 0;
 
-    int shift, sigma, alpha;
+    int shift;
 
     // Makes image black and white in a right way
     void toBinaryImage();
@@ -71,8 +71,8 @@ private:
     int getMaxOfBrightness();
 
     // Functions for erosin and delation functions
-    bool whitePixFound(const int&, const int&);
-    bool blackPixFound(const int&, const int&);
+    bool whitePixFound(const QImage&, const int&, const int&);
+    bool blackPixFound(const QImage&, const int&, const int&);
 
     void colorizeObject(const int&, const int&);
 
@@ -82,8 +82,8 @@ private:
 
 private slots:
     void openImage();
-    void detect();
-    void gaussianBlur();
+    void distribute();
+    void gaussianBlur(const int&);
 };
 
 #endif // MAINWINDOW_H
